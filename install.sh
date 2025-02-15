@@ -35,13 +35,17 @@ check_requirements() {
     # Check processor
     processor=$(getprop ro.product.board)
     if [[ ! "$processor" =~ "SM8550" && ! "$processor" =~ "SM8650" ]]; then
-        error "This application requires Snapdragon 8 Gen 2/3 or equivalent processor."
-        error "Your processor: $processor"
-        read -p "Your device may not meet the performance requirements. Continue anyway? (y/N) " -n 1 -r
+        warning "⚠️ Your processor may not meet the recommended requirements."
+        warning "Recommended: Snapdragon 8 Gen 2/3 or equivalent"
+        warning "Your processor: $processor"
+        warning "Performance may be significantly slower on your device."
+        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r
         echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        if [[ $REPLY =~ ^[Nn]$ ]]; then
             exit 1
         fi
+    else
+        log "✅ Processor check passed: $processor"
     fi
     
     # Check RAM
@@ -53,6 +57,8 @@ check_requirements() {
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             exit 1
         fi
+    else
+        log "✅ RAM check passed: ${total_ram}MB"
     fi
     
     # Check storage
@@ -60,9 +66,11 @@ check_requirements() {
     if (( $(echo "$available_storage < 12" | bc -l) )); then
         error "You need at least 12GB of free storage. Available: ${available_storage}GB"
         exit 1
+    else
+        log "✅ Storage check passed: ${available_storage}GB available"
     fi
     
-    log "System requirements check passed"
+    log "System requirements check completed"
 }
 
 # Setup storage access
