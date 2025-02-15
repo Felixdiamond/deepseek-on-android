@@ -10,10 +10,8 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 
 - 🔒 **Complete Privacy**: All processing happens locally on your device
 - 🌐 **Offline Access**: No internet connection required after initial setup
-- ⚡ **Automated Setup**: Simple installation process with our scripts
-- 🎯 **Optimized Performance**: Tuned for mobile devices
-- 🎨 **User-Friendly Interface**: Easy-to-use frontend application
-- 🛠️ **Customizable**: Adapt the model to your specific needs
+- ⚡ **Automated Setup**: Simple installation process with scripts
+- 🎨 **User-Friendly Interface**: Easy-to-use frontend application (i hope)
 
 ## Requirements
 
@@ -32,7 +30,7 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 
 2. Run our automated installation script:
 ```bash
-curl -sSL https://raw.githubusercontent.com/yourusername/deepseek-android/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-android/main/install.sh | bash
 ```
 
 3. Launch the frontend application:
@@ -129,6 +127,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [DeepSeek AI](https://github.com/deepseek-ai) for the amazing models
 - [Ollama](https://github.com/ollama/ollama) for the model management framework
 - [Termux](https://github.com/termux) for the Android terminal emulator
+- **The following blogs (literally carried the project)**:
+  - [Install DeepSeek on Android](https://www.androidauthority.com/install-deepseek-android-3521203/) - Android Authority
+  - [How to Run DeepSeek R1 1.5B LLM on Android Using Termux](https://www.qed42.com/insights/how-to-run-deepseek-r1-1-5b-llm-on-android-using-termux) - QED42
 
 ## Support
 
