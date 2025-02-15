@@ -35,7 +35,7 @@ curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-on-android/mai
 
 3. Launch the frontend application:
 ```bash
-deepseek-android start
+deepseek-on-android start
 ```
 
 ## Available Models
