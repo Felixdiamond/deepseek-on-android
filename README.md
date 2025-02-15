@@ -28,15 +28,22 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 
 1. Install Termux from [F-Droid](https://f-droid.org/packages/com.termux/) or [GitHub](https://github.com/termux/termux-app/releases)
 
-2. Run our automated installation script:
+2. Clone and install:
 ```bash
-curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-android/main/install.sh | bash
+pkg update && pkg upgrade
+pkg install git
+git clone https://github.com/Felixdiamond/deepseek-android.git
+cd deepseek-android
+chmod +x install.sh
+./install.sh
 ```
 
 3. Launch the frontend application:
 ```bash
-deepseek-android start
+./start_frontend.sh
 ```
+
+⚠️ **Note**: First run will take some time as it downloads the model (5.7GB for 1.5B model, 12GB for 7B model).
 
 ## Available Models
 
@@ -91,7 +98,7 @@ go build
 
 4. Download and run the DeepSeek model:
 ```bash
-./ollama run deepseek-r1:8b-q4
+./ollama run deepseek-r1:7b
 ```
 
 ## Troubleshooting
@@ -113,6 +120,14 @@ go build
    - Use quantized models
    - Ensure device is in high-performance mode
    - Check CPU governor: `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`
+
+## Contributing
+
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 

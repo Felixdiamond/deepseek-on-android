@@ -78,7 +78,7 @@ update_packages() {
     pkg update -y && pkg upgrade -y
     
     log "Installing required packages..."
-    pkg install -y git cmake golang libjpeg-turbo python make wget clang
+    pkg install -y cmake golang libjpeg-turbo python make wget clang
     
     if [ $? -ne 0 ]; then
         error "Failed to install required packages"
