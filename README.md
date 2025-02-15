@@ -114,14 +114,6 @@ go build
    - Ensure device is in high-performance mode
    - Check CPU governor: `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`
 
-## Contributing
-
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## Acknowledgments
 
 - [DeepSeek AI](https://github.com/deepseek-ai) for the amazing models
