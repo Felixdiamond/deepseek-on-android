@@ -28,22 +28,15 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 
 1. Install Termux from [F-Droid](https://f-droid.org/packages/com.termux/) or [GitHub](https://github.com/termux/termux-app/releases)
 
-2. Clone and install:
+2. Run our automated installation script:
 ```bash
-pkg update && pkg upgrade
-pkg install git
-git clone https://github.com/Felixdiamond/deepseek-android.git
-cd deepseek-android
-chmod +x install.sh
-./install.sh
+curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-on-android/main/install.sh | bash
 ```
 
 3. Launch the frontend application:
 ```bash
-./start_frontend.sh
+deepseek-android start
 ```
-
-⚠️ **Note**: First run will take some time as it downloads the model (5.7GB for 1.5B model, 12GB for 7B model).
 
 ## Available Models
 
@@ -98,7 +91,7 @@ go build
 
 4. Download and run the DeepSeek model:
 ```bash
-./ollama run deepseek-r1:7b
+./ollama run deepseek-r1:8b-q4
 ```
 
 ## Troubleshooting
