@@ -1,8 +1,12 @@
 #!/bin/bash
 export DEBIAN_FRONTEND=noninteractive
 
-# DeepSeek Android Installation Script
-# This script automates the installation of DeepSeek on Android using Termux
+# Create checkpoint directory for debugging/resume support
+CHECKPOINT_DIR="$HOME/.deepseek_installer_checkpoints"
+mkdir -p "$CHECKPOINT_DIR"
+
+# DeepSeek Android Installation Script for Termux
+# This script automates the installation of DeepSeek on Android
 
 # Color codes for output
 RED='\033[0;31m'
@@ -10,7 +14,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Log function
+# Log functions
 log() {
     echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}"
 }
@@ -29,7 +33,7 @@ if [ ! -d "/data/data/com.termux" ]; then
     exit 1
 fi
 
-# Check system requirements
+# Check system requirements (always run these)
 check_requirements() {
     log "Checking system requirements..."
     
@@ -54,7 +58,6 @@ check_requirements() {
     if [ "$total_ram" -lt 8000 ]; then
         warning "⚠️ Your device has less than 8GB RAM (${total_ram}MB)."
         warning "Recommended: 8GB+ RAM (12GB+ for 7B model)"
-        warning "Performance may be slower and some models might not work properly."
         read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
@@ -64,7 +67,7 @@ check_requirements() {
         log "✅ RAM check passed: ${total_ram}MB"
     fi
     
-    # Check storage
+    # Check storage and bc (for calculations)
     if ! command -v bc &> /dev/null; then
         pkg install -y bc
     fi
@@ -73,7 +76,6 @@ check_requirements() {
     if (( $(echo "$available_storage < 12" | bc -l) )); then
         warning "⚠️ Low storage space detected: ${available_storage}GB available"
         warning "Recommended: 12GB+ free storage"
-        warning "You might not be able to download larger models."
         read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
@@ -86,14 +88,12 @@ check_requirements() {
     log "System requirements check completed"
 }
 
-# Setup storage access
+# Setup storage access (always run)
 setup_storage() {
     log "Setting up storage access..."
     
-    # Try to setup storage access
     termux-setup-storage
     
-    # Wait for user to grant permission
     for i in {1..5}; do
         if [ -d "$HOME/storage" ]; then
             log "✅ Storage access granted"
@@ -103,9 +103,7 @@ setup_storage() {
         sleep 2
     done
     
-    # If we get here, storage permission wasn't granted
-    warning "⚠️ Storage permission not granted."
-    warning "Some features might not work properly."
+    warning "⚠️ Storage permission not granted. Some features may not work properly."
     read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
     echo
     if [[ $REPLY =~ ^[Nn]$ ]]; then
@@ -113,13 +111,17 @@ setup_storage() {
     fi
 }
 
-# Update packages
+# Update packages (with checkpoint)
 update_packages() {
+    if [ -f "$CHECKPOINT_DIR/update_packages" ]; then
+        log "Skipping package update (checkpoint exists)."
+        return
+    fi
+
     log "Updating package repositories..."
     apt-get update -y < /dev/null
     if ! apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" < /dev/null; then
-        warning "⚠️ Failed to upgrade packages."
-        warning "Some features might not work properly."
+        warning "⚠️ Failed to upgrade packages. Some features might not work properly."
         read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
@@ -128,11 +130,10 @@ update_packages() {
     fi
     
     log "Installing required packages..."
-    required_packages="git cmake golang libjpeg-turbo python make wget clang"
+    required_packages="git cmake golang libjpeg-turbo python make wget clang termux-services"
     for package in $required_packages; do
         if ! pkg install -y "$package"; then
-            warning "⚠️ Failed to install $package"
-            warning "Some features might not work properly."
+            warning "⚠️ Failed to install $package."
             read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
             echo
             if [[ $REPLY =~ ^[Nn]$ ]]; then
@@ -140,10 +141,16 @@ update_packages() {
             fi
         fi
     done
+    touch "$CHECKPOINT_DIR/update_packages"
 }
 
-# Install Ollama
+# Install Ollama (with checkpoint)
 install_ollama() {
+    if [ -f "$CHECKPOINT_DIR/install_ollama" ]; then
+        log "Skipping Ollama installation (checkpoint exists)."
+        return
+    fi
+
     log "Installing Ollama..."
     
     if [ -d "ollama" ]; then
@@ -152,8 +159,7 @@ install_ollama() {
     fi
     
     if ! git clone --depth 1 https://github.com/ollama/ollama.git; then
-        warning "⚠️ Failed to clone Ollama repository."
-        warning "Please check your internet connection."
+        warning "⚠️ Failed to clone Ollama repository. Please check your internet connection."
         read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
@@ -163,7 +169,7 @@ install_ollama() {
         exit 1
     fi
     
-    cd ollama
+    cd ollama || exit 1
     
     log "Building Ollama..."
     if ! go generate ./...; then
@@ -190,10 +196,8 @@ install_ollama() {
         exit 1
     fi
     
-    # Make ollama executable available system-wide
-    if ! cp ollama $PREFIX/bin/; then
-        warning "⚠️ Failed to install Ollama."
-        warning "You might need to run it from the current directory."
+    if ! cp ollama "$PREFIX/bin/"; then
+        warning "⚠️ Failed to install Ollama. You might need to run it from the current directory."
         read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
@@ -201,20 +205,45 @@ install_ollama() {
         fi
     fi
     cd ..
+    touch "$CHECKPOINT_DIR/install_ollama"
 }
 
-# Setup model
+# Start Ollama service helper function
+start_ollama_service() {
+    if ! pgrep ollama > /dev/null; then
+        log "Starting Ollama service..."
+        ollama serve &
+        sleep 5
+        if ! pgrep ollama > /dev/null; then
+            error "Could not start Ollama service. Please ensure it is installed correctly."
+            exit 1
+        fi
+    else
+        log "Ollama service is already running."
+    fi
+}
+
+# Setup model (with checkpoint)
 setup_model() {
+    if [ -f "$CHECKPOINT_DIR/setup_model" ]; then
+        log "Skipping model setup (checkpoint exists)."
+        return
+    fi
+
+    # Ensure Ollama service is running before pulling model
+    start_ollama_service
+
     log "Setting up DeepSeek model..."
     
-    # Ask user which model to install
     echo "Available models:"
-    echo "1) deepseek-r1:1.5b (5.7GB) - Best for devices with 8GB RAM"
-    echo "2) deepseek-r1:7b (12GB) - Better quality, requires 12GB+ RAM"
+    echo "1) deepseek-r1:1.5b (1.1GB) - Best for devices with 8GB RAM"
+    echo "2) deepseek-r1:7b (4.7GB) - Better quality, requires 12GB+ RAM"
     
     read -p "Choose a model (1-2): " model_choice < /dev/tty
+    # Trim whitespace from input
+    model_choice=$(echo "$model_choice" | tr -d '[:space:]')
     
-    case $model_choice in
+    case "$model_choice" in
         1) MODEL="deepseek-r1:1.5b" ;;
         2) MODEL="deepseek-r1:7b" ;;
         *) 
@@ -224,49 +253,50 @@ setup_model() {
     esac
     
     log "Downloading $MODEL..."
-    ollama pull $MODEL
-    
-    if [ $? -ne 0 ]; then
+    if ! ollama pull "$MODEL"; then
         error "Failed to download model"
         exit 1
     fi
+    touch "$CHECKPOINT_DIR/setup_model"
 }
 
-# Setup performance optimizations
+# Setup performance optimizations (with checkpoint)
 setup_performance() {
+    if [ -f "$CHECKPOINT_DIR/setup_performance" ]; then
+        log "Skipping performance setup (checkpoint exists)."
+        return
+    fi
+
     log "Setting up performance optimizations..."
     
-    # Install Termux services for wake lock
-    pkg install -y termux-services
-    
-    # Enable wake lock to prevent sleep
+    # Termux services (wake lock) are already installed in update_packages.
     sv-enable termux-wake-lock
     
-    # Create performance script
-    cat > $PREFIX/bin/optimize-deepseek << 'EOF'
+    # Create performance optimization script
+    cat > "$PREFIX/bin/optimize-deepseek" << 'EOF'
 #!/bin/bash
 sync && echo 3 > /proc/sys/vm/drop_caches
 echo "performance" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 EOF
-    
-    chmod +x $PREFIX/bin/optimize-deepseek
+    chmod +x "$PREFIX/bin/optimize-deepseek"
+    touch "$CHECKPOINT_DIR/setup_performance"
 }
 
-# Setup frontend
+# Setup frontend (with checkpoint)
 setup_frontend() {
+    if [ -f "$CHECKPOINT_DIR/setup_frontend" ]; then
+        log "Skipping frontend setup (checkpoint exists)."
+        return
+    fi
+
     log "Setting up frontend..."
     
-    # Create frontend directory
     mkdir -p deepseek-frontend
-    cd deepseek-frontend
+    cd deepseek-frontend || exit 1
     
-    # Download frontend files
     log "Downloading frontend files..."
-    
-    # Download frontend.py
-    if ! wget -q https://raw.githubusercontent.com/Felixdiamond/deepseek-on-android/main/frontend.py; then
-        warning "⚠️ Failed to download frontend.py"
-        warning "Please check your internet connection."
+    if ! wget -q https://raw.githubusercontent.com/Felixdiamond/deepseek-android/main/frontend.py; then
+        warning "⚠️ Failed to download frontend.py. Please check your internet connection."
         read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
@@ -278,7 +308,6 @@ setup_frontend() {
         exit 1
     fi
     
-    # Create requirements.txt
     cat > requirements.txt << 'EOF'
 streamlit==1.31.1
 requests==2.31.0
@@ -288,16 +317,13 @@ pygments==2.17.2
 keyboard==0.13.5
 EOF
     
-    # Create start script
     cat > start.sh << 'EOF'
 #!/bin/bash
 
-# Color codes for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# Log function
 log() {
     echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}"
 }
@@ -306,29 +332,23 @@ error() {
     echo -e "${RED}[ERROR] $1${NC}" >&2
 }
 
-# Check if Ollama is running
 if ! pgrep ollama > /dev/null; then
-    log "Starting Ollama server..."
+    log "Starting Ollama service..."
     ollama serve &
     sleep 5
 fi
 
-# Install Python dependencies if not already installed
 log "Checking Python dependencies..."
 pip install -r requirements.txt
 
-# Start the Streamlit frontend
 log "Starting frontend application..."
 streamlit run frontend.py --server.port 8501 --server.address 0.0.0.0
 EOF
-    
     chmod +x start.sh
     
-    # Install Python dependencies
     log "Installing Python dependencies..."
     if ! pip install -r requirements.txt; then
-        warning "⚠️ Failed to install some Python dependencies."
-        warning "The frontend might not work properly."
+        warning "⚠️ Failed to install some Python dependencies. The frontend might not work properly."
         read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
@@ -336,20 +356,17 @@ EOF
             exit 1
         fi
     fi
-    
     cd ..
     
-    # Create convenience script in PATH
-    cat > $PREFIX/bin/deepseek << 'EOF'
+    cat > "$PREFIX/bin/deepseek" << 'EOF'
 #!/bin/bash
 cd $HOME/deepseek-frontend
 ./start.sh
 EOF
+    chmod +x "$PREFIX/bin/deepseek"
     
-    chmod +x $PREFIX/bin/deepseek
-    
-    log "✅ Frontend setup completed"
-    log "To start DeepSeek, simply run: deepseek"
+    log "✅ Frontend setup completed. To start DeepSeek, simply run: deepseek"
+    touch "$CHECKPOINT_DIR/setup_frontend"
 }
 
 # Main installation process
@@ -369,5 +386,4 @@ main() {
     log "To optimize performance before running, execute: optimize-deepseek"
 }
 
-# Run main installation
 main 
