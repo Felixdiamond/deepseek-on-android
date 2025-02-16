@@ -264,7 +264,7 @@ setup_frontend() {
     log "Downloading frontend files..."
     
     # Download frontend.py
-    if ! wget -q https://raw.githubusercontent.com/Felixdiamond/deepseek-android/main/frontend.py; then
+    if ! wget -q https://raw.githubusercontent.com/Felixdiamond/deepseek-on-android/main/frontend.py; then
         warning "⚠️ Failed to download frontend.py"
         warning "Please check your internet connection."
         read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty

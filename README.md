@@ -32,7 +32,7 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 ```bash
 pkg update && pkg upgrade
 pkg install curl
-curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-android/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-on-android/main/install.sh | bash
 ```
 
 3. Start DeepSeek:
@@ -92,8 +92,8 @@ If you prefer to install manually or need to troubleshoot:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/Felixdiamond/deepseek-android.git
-cd deepseek-android
+git clone https://github.com/Felixdiamond/deepseek-on-android.git
+cd deepseek-on-android
 ```
 
 2. Run the installation script:
