@@ -28,15 +28,26 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 
 1. Install Termux from [F-Droid](https://f-droid.org/packages/com.termux/) or [GitHub](https://github.com/termux/termux-app/releases)
 
-2. Run our automated installation script:
+2. Run the automated installation:
 ```bash
-curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-on-android/main/install.sh | bash
+pkg update && pkg upgrade
+pkg install curl
+curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-android/main/install.sh | bash
 ```
 
-3. Launch the frontend application:
+3. Start DeepSeek:
 ```bash
-deepseek-on-android start
+deepseek
 ```
+
+That's it! The installation script handles everything automatically, including:
+- System requirements check
+- Package installation
+- Model download
+- Frontend setup
+- Performance optimization
+
+⚠️ **Note**: First run will take some time as it downloads the model (5.7GB for 1.5B model, 12GB for 7B model).
 
 ## Available Models
 
@@ -45,82 +56,76 @@ deepseek-on-android start
 
 ⚠️ **Important**: The 7B model requires a Snapdragon 8 Gen 2/3 or equivalent processor for acceptable performance.
 
+## Features
+
+### Privacy Features
+- 100% offline after initial setup
+- No data sent to external servers
+- All processing done locally
+
+### Performance Tools
+- RAM usage monitoring
+- CPU temperature tracking
+- Performance optimization script
+- Wake lock to prevent sleep
+
 ## Performance Tips
 
-1. **Memory Management**:
-   - Close background apps before running models
-   - Monitor RAM usage with `top` command
-   - For 7B model, ensure at least 12GB RAM is available
+1. **Before Starting**:
+   - Close background apps
+   - Run the optimizer: `optimize-deepseek`
+   - Keep device plugged in for best performance
 
-2. **Battery Optimization**:
-   - Keep device plugged in during long sessions
-   - Use `termux-wake-lock` to prevent sleep
-   ```bash
-   pkg install termux-services
-   sv-enable termux-wake-lock
-   ```
+2. **Model Selection**:
+   - Start with 1.5B model to test performance
+   - Upgrade to 7B if device handles it well
+   - Monitor RAM usage in the interface
 
-3. **Storage Management**:
-   - Clear Termux cache periodically:
-   ```bash
-   apt clean && apt autoclean
-   ```
+3. **Troubleshooting**:
+   - If responses are slow, try the optimizer
+   - If out of memory, switch to 1.5B model
+   - Check CPU temperature in the interface
 
-## Detailed Installation
+## Manual Installation
 
-For manual installation or troubleshooting, follow these steps:
+If you prefer to install manually or need to troubleshoot:
 
-1. Install Termux and grant storage permissions:
+1. Clone the repository:
 ```bash
-termux-setup-storage
+git clone https://github.com/Felixdiamond/deepseek-android.git
+cd deepseek-android
 ```
 
-2. Update packages and install dependencies:
+2. Run the installation script:
 ```bash
-pkg update && pkg upgrade
-pkg install git cmake golang libjpeg-turbo
-```
-
-3. Install Ollama:
-```bash
-git clone --depth 1 https://github.com/ollama/ollama.git
-cd ollama
-go generate ./...
-go build
-```
-
-4. Download and run the DeepSeek model:
-```bash
-./ollama run deepseek-r1:8b-q4
+chmod +x install.sh
+./install.sh
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **"Permission Denied" Error**:
-   ```bash
-   termux-setup-storage
-   chmod +x install.sh
-   ```
+1. **"Not enough storage"**:
+   - Clear Termux cache: `apt clean && apt autoclean`
+   - Free up device storage
+   - Try 1.5B model instead of 7B
 
-2. **"Out of Memory" Error**:
-   - Switch to a smaller model (e.g., deepseek-r1:1.5b)
+2. **"Performance is slow"**:
+   - Run: `optimize-deepseek`
    - Close background apps
-   - Clear RAM: `sync && echo 3 > /proc/sys/vm/drop_caches`
+   - Check CPU temperature in interface
+   - Consider switching to 1.5B model
 
-3. **Slow Performance**:
-   - Use quantized models
-   - Ensure device is in high-performance mode
-   - Check CPU governor: `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor`
+3. **"Out of memory"**:
+   - Close background apps
+   - Switch to 1.5B model
+   - Clear RAM: `optimize-deepseek`
 
-## Contributing
-
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+4. **"Frontend won't start"**:
+   - Check if Ollama is running: `pgrep ollama`
+   - Reinstall Python dependencies: `pip install -r requirements.txt`
+   - Check logs in terminal
 
 ## Acknowledgments
 
@@ -139,4 +144,4 @@ If you find this project helpful, please consider:
 - Contributing improvements
 - Sharing with others
 
-For questions and support, please [open an issue](../../issues). 
+For questions and support, please [open an issue](../../issues).
