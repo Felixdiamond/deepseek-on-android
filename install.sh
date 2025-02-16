@@ -1,4 +1,5 @@
 #!/bin/bash
+export DEBIAN_FRONTEND=noninteractive
 
 # DeepSeek Android Installation Script
 # This script automates the installation of DeepSeek on Android using Termux
@@ -39,7 +40,7 @@ check_requirements() {
         warning "Recommended: Snapdragon 8 Gen 2/3 or equivalent"
         warning "Your processor: $processor"
         warning "Performance may be significantly slower on your device."
-        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r
+        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
             exit 1
@@ -54,7 +55,7 @@ check_requirements() {
         warning "⚠️ Your device has less than 8GB RAM (${total_ram}MB)."
         warning "Recommended: 8GB+ RAM (12GB+ for 7B model)"
         warning "Performance may be slower and some models might not work properly."
-        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r
+        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
             exit 1
@@ -65,7 +66,7 @@ check_requirements() {
     
     # Check storage
     if ! command -v bc &> /dev/null; then
-        pkg install -y bc
+        pkg install -y bc --force-confdef --force-confold
     fi
     
     available_storage=$(df -h /data | awk 'NR==2 {print $4}' | sed 's/G//')
@@ -73,7 +74,7 @@ check_requirements() {
         warning "⚠️ Low storage space detected: ${available_storage}GB available"
         warning "Recommended: 12GB+ free storage"
         warning "You might not be able to download larger models."
-        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r
+        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
             exit 1
@@ -105,7 +106,7 @@ setup_storage() {
     # If we get here, storage permission wasn't granted
     warning "⚠️ Storage permission not granted."
     warning "Some features might not work properly."
-    read -p "Do you want to continue anyway? (Y/n) " -n 1 -r
+    read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
     echo
     if [[ $REPLY =~ ^[Nn]$ ]]; then
         exit 1
@@ -118,7 +119,7 @@ update_packages() {
     if ! pkg update -y; then
         warning "⚠️ Failed to update package repositories."
         warning "Some packages might be outdated."
-        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r
+        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
             exit 1
@@ -128,7 +129,7 @@ update_packages() {
     if ! pkg upgrade -y; then
         warning "⚠️ Failed to upgrade packages."
         warning "Some features might not work properly."
-        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r
+        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
             exit 1
@@ -138,10 +139,10 @@ update_packages() {
     log "Installing required packages..."
     required_packages="git cmake golang libjpeg-turbo python make wget clang"
     for package in $required_packages; do
-        if ! pkg install -y "$package"; then
+        if ! pkg install -y "$package" --force-confdef --force-confold; then
             warning "⚠️ Failed to install $package"
             warning "Some features might not work properly."
-            read -p "Do you want to continue anyway? (Y/n) " -n 1 -r
+            read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
             echo
             if [[ $REPLY =~ ^[Nn]$ ]]; then
                 exit 1
@@ -162,7 +163,7 @@ install_ollama() {
     if ! git clone --depth 1 https://github.com/ollama/ollama.git; then
         warning "⚠️ Failed to clone Ollama repository."
         warning "Please check your internet connection."
-        read -p "Do you want to retry? (Y/n) " -n 1 -r
+        read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             install_ollama
@@ -177,7 +178,7 @@ install_ollama() {
     if ! go generate ./...; then
         warning "⚠️ Failed to generate Ollama files."
         cd ..
-        read -p "Do you want to retry? (Y/n) " -n 1 -r
+        read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             install_ollama
@@ -189,7 +190,7 @@ install_ollama() {
     if ! go build; then
         warning "⚠️ Failed to build Ollama."
         cd ..
-        read -p "Do you want to retry? (Y/n) " -n 1 -r
+        read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             install_ollama
@@ -202,7 +203,7 @@ install_ollama() {
     if ! cp ollama $PREFIX/bin/; then
         warning "⚠️ Failed to install Ollama."
         warning "You might need to run it from the current directory."
-        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r
+        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
             exit 1
@@ -220,7 +221,7 @@ setup_model() {
     echo "1) deepseek-r1:1.5b (5.7GB) - Best for devices with 8GB RAM"
     echo "2) deepseek-r1:7b (12GB) - Better quality, requires 12GB+ RAM"
     
-    read -p "Choose a model (1-2): " model_choice
+    read -p "Choose a model (1-2): " model_choice < /dev/tty
     
     case $model_choice in
         1) MODEL="deepseek-r1:1.5b" ;;
@@ -245,7 +246,7 @@ setup_performance() {
     log "Setting up performance optimizations..."
     
     # Install Termux services for wake lock
-    pkg install -y termux-services
+    pkg install -y termux-services --force-confdef --force-confold
     
     # Enable wake lock to prevent sleep
     sv-enable termux-wake-lock
@@ -275,7 +276,7 @@ setup_frontend() {
     if ! wget -q https://raw.githubusercontent.com/Felixdiamond/deepseek-android/main/frontend.py; then
         warning "⚠️ Failed to download frontend.py"
         warning "Please check your internet connection."
-        read -p "Do you want to retry? (Y/n) " -n 1 -r
+        read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             cd ..
@@ -337,7 +338,7 @@ EOF
     if ! pip install -r requirements.txt; then
         warning "⚠️ Failed to install some Python dependencies."
         warning "The frontend might not work properly."
-        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r
+        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ $REPLY =~ ^[Nn]$ ]]; then
             cd ..
