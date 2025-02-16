@@ -309,12 +309,12 @@ setup_frontend() {
     fi
     
     cat > requirements.txt << 'EOF'
-streamlit==1.31.1
-requests==2.31.0
-python-dotenv==1.0.1
-markdown==3.5.2
-pygments==2.17.2
-keyboard==0.13.5
+streamlit
+requests
+python-dotenv
+markdown
+pygments
+keyboard
 EOF
     
     cat > start.sh << 'EOF'
