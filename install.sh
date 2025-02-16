@@ -66,7 +66,7 @@ check_requirements() {
     
     # Check storage
     if ! command -v bc &> /dev/null; then
-        pkg install -y bc --force-confdef --force-confold
+        pkg install -y bc
     fi
     
     available_storage=$(df -h /data | awk 'NR==2 {print $4}' | sed 's/G//')
@@ -116,17 +116,8 @@ setup_storage() {
 # Update packages
 update_packages() {
     log "Updating package repositories..."
-    if ! pkg update -y; then
-        warning "⚠️ Failed to update package repositories."
-        warning "Some packages might be outdated."
-        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
-        echo
-        if [[ $REPLY =~ ^[Nn]$ ]]; then
-            exit 1
-        fi
-    fi
-    
-    if ! pkg upgrade -y; then
+    apt-get update -y < /dev/null
+    if ! apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" < /dev/null; then
         warning "⚠️ Failed to upgrade packages."
         warning "Some features might not work properly."
         read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
@@ -139,7 +130,7 @@ update_packages() {
     log "Installing required packages..."
     required_packages="git cmake golang libjpeg-turbo python make wget clang"
     for package in $required_packages; do
-        if ! pkg install -y "$package" --force-confdef --force-confold; then
+        if ! pkg install -y "$package"; then
             warning "⚠️ Failed to install $package"
             warning "Some features might not work properly."
             read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
@@ -246,7 +237,7 @@ setup_performance() {
     log "Setting up performance optimizations..."
     
     # Install Termux services for wake lock
-    pkg install -y termux-services --force-confdef --force-confold
+    pkg install -y termux-services
     
     # Enable wake lock to prevent sleep
     sv-enable termux-wake-lock
