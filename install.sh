@@ -370,19 +370,288 @@ EOF
     touch "$CHECKPOINT_DIR/setup_frontend"
 }
 
+# Add Python version check and requirement
+check_python_version() {
+    log "Checking Python version..."
+    # Get Python version if available
+    if command -v python3 &> /dev/null; then
+        python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+        if (( $(echo "$python_version >= 3.11" | bc -l) )); then
+            log "✅ Python $python_version found"
+            return 0
+        fi
+    fi
+    
+    log "Installing Python 3.11 or newer..."
+    pkg install -y python3
+    
+    # Verify installation
+    if ! command -v python3 &> /dev/null; then
+        error "Failed to install Python"
+        exit 1
+    fi
+    
+    python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+    if (( $(echo "$python_version >= 3.11" | bc -l) )); then
+        log "✅ Python $python_version installed"
+    else
+        error "Installed Python version $python_version is too old. Version 3.11 or newer is required."
+        exit 1
+    fi
+}
+
+# Setup data directory
+setup_data_directory() {
+    if [ -f "$CHECKPOINT_DIR/setup_data_directory" ]; then
+        log "Skipping data directory setup (checkpoint exists)."
+        return
+    fi
+
+    log "Setting up data directory..."
+    
+    # Create data directory
+    mkdir -p "$HOME/.local/share/open-webui"
+    
+    # Create backup directory
+    mkdir -p "$HOME/.local/share/open-webui/backups"
+    
+    touch "$CHECKPOINT_DIR/setup_data_directory"
+    log "✅ Data directory setup completed"
+}
+
+# Create admin account setup script
+create_admin_setup() {
+    log "Creating admin account setup script..."
+    
+    cat > "$PREFIX/bin/deepseek-admin" << 'EOF'
+#!/bin/bash
+
+# Function to generate a secure random password
+generate_password() {
+    tr -dc 'A-Za-z0-9!@#$%^&*' < /dev/urandom | head -c 16
+}
+
+# Create admin credentials file
+ADMIN_FILE="$HOME/.local/share/open-webui/admin.json"
+
+if [ ! -f "$ADMIN_FILE" ]; then
+    echo "Setting up admin account..."
+    read -p "Enter admin username [admin]: " username
+    username=${username:-admin}
+    
+    read -p "Generate random password? [Y/n]: " generate
+    if [[ $generate =~ ^[Nn]$ ]]; then
+        read -s -p "Enter admin password: " password
+        echo
+        read -s -p "Confirm admin password: " password2
+        echo
+        if [ "$password" != "$password2" ]; then
+            echo "Passwords do not match!"
+            exit 1
+        fi
+    else
+        password=$(generate_password)
+        echo "Generated password: $password"
+        echo "Please save this password!"
+    fi
+    
+    # Save credentials
+    echo "{\"username\":\"$username\",\"password\":\"$password\"}" > "$ADMIN_FILE"
+    chmod 600 "$ADMIN_FILE"
+    echo "Admin account created successfully!"
+else
+    echo "Admin account already exists."
+    echo "To reset admin account, delete $ADMIN_FILE and run this script again."
+fi
+EOF
+
+    chmod +x "$PREFIX/bin/deepseek-admin"
+}
+
+# Create backup script
+create_backup_script() {
+    log "Creating backup script..."
+    
+    cat > "$PREFIX/bin/deepseek-backup" << 'EOF'
+#!/bin/bash
+
+BACKUP_DIR="$HOME/.local/share/open-webui/backups"
+DATA_DIR="$HOME/.local/share/open-webui"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+case "$1" in
+    create)
+        echo "Creating backup..."
+        tar -czf "$BACKUP_DIR/open-webui_$DATE.tar.gz" -C "$DATA_DIR" .
+        echo "Backup created: open-webui_$DATE.tar.gz"
+        ;;
+    restore)
+        if [ -z "$2" ]; then
+            echo "Available backups:"
+            ls -1 "$BACKUP_DIR"
+            echo "Usage: $0 restore <backup_file>"
+            exit 1
+        fi
+        if [ ! -f "$BACKUP_DIR/$2" ]; then
+            echo "Backup file not found: $2"
+            exit 1
+        fi
+        echo "Restoring from backup: $2"
+        tar -xzf "$BACKUP_DIR/$2" -C "$DATA_DIR"
+        echo "Backup restored successfully!"
+        ;;
+    list)
+        echo "Available backups:"
+        ls -1 "$BACKUP_DIR"
+        ;;
+    *)
+        echo "Usage: $0 {create|restore|list}"
+        echo "  create  - Create a new backup"
+        echo "  restore - Restore from a backup"
+        echo "  list    - List available backups"
+        exit 1
+        ;;
+esac
+EOF
+
+    chmod +x "$PREFIX/bin/deepseek-backup"
+}
+
+# Create update script
+create_update_script() {
+    log "Creating update script..."
+    
+    cat > "$PREFIX/bin/deepseek-update" << 'EOF'
+#!/bin/bash
+
+# Activate virtual environment
+source "$HOME/venv/bin/activate"
+
+echo "Stopping services..."
+deepseek-stop
+
+echo "Creating backup..."
+deepseek-backup create
+
+echo "Updating Open WebUI..."
+pip install -U open-webui
+
+echo "Update completed!"
+echo "You can start the services again by running: deepseek"
+EOF
+
+    chmod +x "$PREFIX/bin/deepseek-update"
+}
+
+# Install Open WebUI
+install_open_webui() {
+    if [ -f "$CHECKPOINT_DIR/install_open_webui" ]; then
+        log "Skipping Open WebUI installation (checkpoint exists)."
+        return
+    }
+
+    log "Installing Open WebUI..."
+    
+    # Create and activate virtual environment
+    if [ ! -d "venv" ]; then
+        python3 -m venv venv
+    fi
+    source venv/bin/activate
+
+    # Set environment variables for offline mode
+    export HF_HUB_OFFLINE=1
+    export OLLAMA_BASE_URL=http://localhost:11434
+
+    # Install Open WebUI
+    if ! pip install open-webui; then
+        error "Failed to install Open WebUI"
+        exit 1
+    fi
+
+    # Create service management scripts
+    create_service_scripts
+    create_admin_setup
+    create_backup_script
+    create_update_script
+
+    log "✅ Open WebUI installed successfully"
+    touch "$CHECKPOINT_DIR/install_open_webui"
+}
+
+# Create service management scripts
+create_service_scripts() {
+    log "Creating service management scripts..."
+
+    # Create start script
+    cat > "$PREFIX/bin/deepseek" << 'EOF'
+#!/bin/bash
+
+# Start Ollama if not running
+if ! pgrep ollama > /dev/null; then
+    echo "Starting Ollama service..."
+    ollama serve &
+    sleep 5
+fi
+
+# Activate virtual environment and start Open WebUI
+source $HOME/venv/bin/activate
+export HF_HUB_OFFLINE=1
+export OLLAMA_BASE_URL=http://localhost:11434
+open-webui serve
+EOF
+
+    # Create stop script
+    cat > "$PREFIX/bin/deepseek-stop" << 'EOF'
+#!/bin/bash
+
+# Stop Open WebUI
+pkill -f "open-webui"
+
+# Stop Ollama
+pkill -f "ollama"
+
+echo "Services stopped"
+EOF
+
+    # Make scripts executable
+    chmod +x "$PREFIX/bin/deepseek"
+    chmod +x "$PREFIX/bin/deepseek-stop"
+
+    log "✅ Service scripts created"
+}
+
 # Main installation process
 main() {
     log "Starting DeepSeek Android installation..."
     check_requirements
     setup_storage
     update_packages
+    check_python_version
+    setup_data_directory
     install_ollama
     setup_model
     setup_performance
-    setup_frontend
+    install_open_webui
+    
+    # Run first-time admin setup
+    log "Running first-time admin setup..."
+    deepseek-admin
+    
     log "Installation completed successfully! 🎉"
     log "To start DeepSeek, run: deepseek"
+    log "To stop services, run: deepseek-stop"
     log "To optimize performance before running, execute: optimize-deepseek"
+    log "To update Open WebUI, run: deepseek-update"
+    log "To manage backups, run: deepseek-backup"
+    log "Access the web interface at: http://localhost:8080"
+    
+    # Print admin credentials if they exist
+    ADMIN_FILE="$HOME/.local/share/open-webui/admin.json"
+    if [ -f "$ADMIN_FILE" ]; then
+        echo
+        log "Admin credentials are stored in: $ADMIN_FILE"
+        log "Please save your admin password in a secure location!"
+    fi
 }
 
 main 
