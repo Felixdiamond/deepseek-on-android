@@ -262,7 +262,7 @@ setup_frontend() {
     mkdir -p deepseek-frontend
     cd deepseek-frontend || exit 1
     log "Initializing Next.js project..."
-    if ! git clone --depth 1 https://github.com/Felixdiamond/deepseek-on-android.git .; then
+    if ! git clone --depth 1 --branch bankai --single-branch https://github.com/Felixdiamond/deepseek-on-android.git .; then
         warning "⚠️ Failed to clone frontend repository. Please check your internet connection."
         read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
         echo
