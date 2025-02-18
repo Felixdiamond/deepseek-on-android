@@ -258,9 +258,11 @@ setup_frontend() {
         log "Skipping frontend setup (checkpoint exists)."
         return
     fi
+
     log "Setting up Next.js frontend..."
     mkdir -p deepseek-frontend
     cd deepseek-frontend || exit 1
+
     log "Initializing Next.js project..."
     if ! git clone --depth 1 --branch bankai --single-branch https://github.com/Felixdiamond/deepseek-on-android.git .; then
         warning "⚠️ Failed to clone frontend repository. Please check your internet connection."
@@ -274,7 +276,20 @@ setup_frontend() {
         cd ..
         exit 1
     fi
-    log "Installing frontend dependencies..."
+
+    # Ensure Yarn is installed
+    if ! command -v yarn > /dev/null; then
+        log "Yarn is not installed. Attempting to install Yarn..."
+        if ! pkg install -y yarn; then
+            log "pkg install failed; trying npm install -g yarn instead..."
+            npm install -g yarn || {
+                error "Failed to install Yarn using both pkg and npm. Exiting..."
+                exit 1
+            }
+        fi
+    fi
+
+    log "Installing frontend dependencies via Yarn..."
     if ! yarn install; then
         warning "⚠️ Failed to install frontend dependencies."
         read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
@@ -287,6 +302,7 @@ setup_frontend() {
         cd ..
         exit 1
     fi
+
     log "Building frontend..."
     if ! yarn build; then
         warning "⚠️ Failed to build frontend."
@@ -300,6 +316,7 @@ setup_frontend() {
         cd ..
         exit 1
     fi
+
     cd ..
     cat > "$PREFIX/bin/deepseek" << 'EOF'
 #!/bin/bash
