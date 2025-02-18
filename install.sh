@@ -121,7 +121,7 @@ update_packages() {
         fi
     fi
     log "Installing required packages..."
-    required_packages="git cmake golang libjpeg-turbo python make wget clang termux-services nodejs yarn"
+    required_packages="git cmake python3 make wget clang termux-services"
     for package in $required_packages; do
         if ! pkg install -y "$package"; then
             warning "⚠️ Failed to install $package."
@@ -250,124 +250,6 @@ echo "performance" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 EOF
     chmod +x "$PREFIX/bin/optimize-deepseek"
     touch "$CHECKPOINT_DIR/setup_performance"
-}
-
-# Setup Next.js frontend (with checkpoint)
-setup_frontend() {
-    if [ -f "$CHECKPOINT_DIR/setup_frontend" ]; then
-        log "Skipping frontend setup (checkpoint exists)."
-        return
-    fi
-
-    log "Setting up Next.js frontend..."
-
-    # Check if deepseek-frontend directory exists
-    if [ -d deepseek-frontend ]; then
-        cd deepseek-frontend || exit 1
-        # If package.json is missing, then the repo is not set up properly
-        if [ ! -f package.json ]; then
-            log "Existing deepseek-frontend directory is invalid (no package.json found). Removing it..."
-            cd ..
-            rm -rf deepseek-frontend
-            mkdir deepseek-frontend
-            cd deepseek-frontend || exit 1
-            log "Cloning frontend repository into an empty directory..."
-            if ! git clone --depth 1 --branch bankai --filter=blob:none --sparse https://github.com/Felixdiamond/deepseek-on-android.git .; then
-                warning "⚠️ Failed to clone frontend repository. Please check your internet connection."
-                read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
-                echo
-                if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-                    cd ..
-                    setup_frontend
-                    return
-                fi
-                cd ..
-                exit 1
-            fi
-            git sparse-checkout set frontend
-            mv frontend/* .
-            rm -rf frontend
-        else
-            log "Frontend repository already exists. Updating repository..."
-            if ! git pull; then
-                warning "⚠️ Failed to update frontend repository."
-            fi
-        fi
-    else
-        mkdir deepseek-frontend
-        cd deepseek-frontend || exit 1
-        log "Cloning frontend repository..."
-        if ! git clone --depth 1 --branch bankai --filter=blob:none --sparse https://github.com/Felixdiamond/deepseek-on-android.git .; then
-            warning "⚠️ Failed to clone frontend repository. Please check your internet connection."
-            read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
-            echo
-            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-                cd ..
-                setup_frontend
-                return
-            fi
-            cd ..
-            exit 1
-        fi
-        git sparse-checkout set frontend
-        mv frontend/* .
-        rm -rf frontend
-    fi
-
-    # Ensure Yarn is installed
-    if ! command -v yarn > /dev/null; then
-        log "Yarn is not installed. Attempting to install Yarn..."
-        if ! pkg install -y yarn; then
-            log "pkg install failed; trying npm install -g yarn instead..."
-            npm install -g yarn || {
-                error "Failed to install Yarn using both pkg and npm. Exiting..."
-                exit 1
-            }
-        fi
-    fi
-
-    log "Installing frontend dependencies via Yarn..."
-    if ! yarn install; then
-        warning "⚠️ Failed to install frontend dependencies."
-        read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
-        echo
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            cd ..
-            setup_frontend
-            return
-        fi
-        cd ..
-        exit 1
-    fi
-
-    log "Building frontend..."
-    if ! yarn build; then
-        warning "⚠️ Failed to build frontend."
-        read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
-        echo
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            cd ..
-            setup_frontend
-            return
-        fi
-        cd ..
-        exit 1
-    fi
-
-    cd ..
-    cat > "$PREFIX/bin/deepseek" << 'EOF'
-#!/bin/bash
-cd $HOME/deepseek-frontend
-if ! pgrep ollama > /dev/null; then
-    echo "Starting Ollama service..."
-    ollama serve &
-    sleep 5
-fi
-yarn start
-EOF
-    chmod +x "$PREFIX/bin/deepseek"
-    log "✅ Frontend setup completed. To start DeepSeek, simply run: deepseek"
-    touch "$CHECKPOINT_DIR/setup_frontend"
 }
 
 # Add Python version check and requirement
@@ -548,7 +430,7 @@ install_open_webui() {
     if [ -f "$CHECKPOINT_DIR/install_open_webui" ]; then
         log "Skipping Open WebUI installation (checkpoint exists)."
         return
-    }
+    fi
 
     log "Installing Open WebUI..."
     
