@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Loader2Icon, TrashIcon, DownloadIcon } from 'lucide-react'
+import { Loader2Icon, TrashIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function ModelSelector() {
@@ -39,7 +39,8 @@ export function ModelSelector() {
   // Fetch available models on mount
   React.useEffect(() => {
     fetchModels()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // We only want to run this once on mount
 
   const fetchModels = async () => {
     try {

@@ -1,8 +1,16 @@
-import { WebSocketServer } from 'ws'
+import { WebSocketServer, WebSocket } from 'ws'
 import { NextRequest } from 'next/server'
 import { logger } from '@/lib/logger'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
+import type { WebSocketMessage, ChatMessage, SystemStats } from '@/lib/websocket'
+import type { IncomingMessage } from 'http'
+import type { Duplex } from 'stream'
+
+export const runtime = 'nodejs'
 
 const wss = new WebSocketServer({ noServer: true })
+const execAsync = promisify(exec)
 
 // Store active connections
 const clients = new Set<WebSocket>()
@@ -18,15 +26,15 @@ wss.on('connection', (ws: WebSocket) => {
   // Handle incoming messages
   ws.on('message', async (data: string) => {
     try {
-      const message = JSON.parse(data)
+      const message = JSON.parse(data) as WebSocketMessage
       logger.debug('Received message', { type: message.type })
 
       switch (message.type) {
         case 'chat':
-          handleChatMessage(ws, message)
+          await handleChatMessage(ws, message)
           break
         case 'system':
-          handleSystemMessage(ws, message)
+          await handleSystemMessage(ws)
           break
         default:
           logger.warn('Unknown message type', { type: message.type })
@@ -51,7 +59,7 @@ wss.on('connection', (ws: WebSocket) => {
 })
 
 // Handle chat messages
-async function handleChatMessage(ws: WebSocket, message: any) {
+async function handleChatMessage(ws: WebSocket, message: WebSocketMessage) {
   const messageId = crypto.randomUUID()
 
   try {
@@ -61,7 +69,7 @@ async function handleChatMessage(ws: WebSocket, message: any) {
       payload: {
         type: 'start',
         messageId,
-      },
+      } as ChatMessage,
     })
 
     // Start streaming response
@@ -69,8 +77,8 @@ async function handleChatMessage(ws: WebSocket, message: any) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: message.payload.model,
-        prompt: message.payload.content,
+        model: message.type === 'chat' && 'model' in message.payload ? message.payload.model : 'deepseek-r1:1.5b',
+        prompt: message.type === 'chat' && 'content' in message.payload ? message.payload.content : '',
         stream: true,
       }),
     })
@@ -94,7 +102,7 @@ async function handleChatMessage(ws: WebSocket, message: any) {
           type: 'update',
           messageId,
           content: chunk,
-        },
+        } as ChatMessage,
       })
     }
 
@@ -104,7 +112,7 @@ async function handleChatMessage(ws: WebSocket, message: any) {
       payload: {
         type: 'end',
         messageId,
-      },
+      } as ChatMessage,
     })
   } catch (error) {
     logger.error('Error handling chat message', error)
@@ -113,7 +121,7 @@ async function handleChatMessage(ws: WebSocket, message: any) {
 }
 
 // Handle system messages
-async function handleSystemMessage(ws: WebSocket, message: any) {
+async function handleSystemMessage(ws: WebSocket) {
   try {
     const stats = await getSystemStats()
     send(ws, {
@@ -127,11 +135,7 @@ async function handleSystemMessage(ws: WebSocket, message: any) {
 }
 
 // Get system stats
-async function getSystemStats() {
-  const { exec } = require('child_process')
-  const { promisify } = require('util')
-  const execAsync = promisify(exec)
-
+async function getSystemStats(): Promise<SystemStats> {
   try {
     // Get RAM usage
     const { stdout: memInfo } = await execAsync('free -m')
@@ -160,7 +164,7 @@ async function getSystemStats() {
     const storageUsage = Math.round((usedStorage / totalStorage) * 100)
 
     // Check if Ollama is running
-    let ollamaStatus = 'stopped'
+    let ollamaStatus: 'running' | 'stopped' = 'stopped'
     try {
       await execAsync('pgrep ollama')
       ollamaStatus = 'running'
@@ -216,19 +220,10 @@ function sendError(ws: WebSocket, message: string) {
 }
 
 // Send message to a client
-function send(ws: WebSocket, message: any) {
+function send(ws: WebSocket, message: WebSocketMessage) {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(message))
   }
-}
-
-// Broadcast message to all clients
-function broadcast(message: any) {
-  clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(message))
-    }
-  })
 }
 
 // Export the WebSocket server
@@ -238,10 +233,26 @@ export const GET = async (req: NextRequest) => {
   }
 
   try {
-    const { socket, response } = Deno.upgradeWebSocket(req)
-    wss.handleUpgrade(req, socket, Buffer.alloc(0), (ws) => {
-      wss.emit('connection', ws, req)
+    const { response } = await new Promise<{ response: Response }>((resolve) => {
+      const upgrade = (socket: WebSocket) => {
+        wss.emit('connection', socket, req)
+        resolve({ response: new Response(null, { status: 101 }) })
+      }
+
+      // Convert NextRequest to a format that ws can understand
+      const wsReq: Partial<IncomingMessage> = {
+        headers: Object.fromEntries(req.headers.entries()),
+        method: req.method,
+        url: req.url,
+      }
+
+      // Get the raw socket from the request
+      // Note: This is a workaround as NextRequest doesn't expose the socket directly
+      const socket = (req as unknown as { socket: Duplex }).socket
+
+      wss.handleUpgrade(wsReq as IncomingMessage, socket, Buffer.alloc(0), upgrade)
     })
+
     return response
   } catch (error) {
     logger.error('Error upgrading WebSocket connection', error)

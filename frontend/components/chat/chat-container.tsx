@@ -2,7 +2,6 @@
 
 import * as React from 'react'
 import { useStore } from '@/lib/store'
-import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ChatInput } from './chat-input'
 import { ChatMessage } from './chat-message'

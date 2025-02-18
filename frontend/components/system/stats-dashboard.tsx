@@ -12,6 +12,7 @@ import {
   AlertTriangleIcon,
   CheckCircleIcon,
 } from 'lucide-react'
+import type { SystemStats } from '@/lib/websocket'
 
 export function StatsDashboard() {
   const { systemStats, isMonitoring, setIsMonitoring, setSystemStats } = useStore()
@@ -36,8 +37,8 @@ export function StatsDashboard() {
       const eventSource = new EventSource('/api/system/stream')
 
       eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data)
-        setSystemStats((prev) => ({ ...prev, ...data }))
+        const data = JSON.parse(event.data) as SystemStats
+        setSystemStats(data)
       }
 
       eventSource.onerror = () => {

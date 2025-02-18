@@ -28,7 +28,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import {
-  MonitorIcon,
   MoonIcon,
   SunIcon,
   LaptopIcon,

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
-import { exec } from 'child_process'
+import { exec } from 'node:child_process'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
