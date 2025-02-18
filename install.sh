@@ -272,7 +272,7 @@ setup_frontend() {
             mkdir deepseek-frontend
             cd deepseek-frontend || exit 1
             log "Cloning frontend repository into an empty directory..."
-            if ! git clone --depth 1 https://github.com/Felixdiamond/deepseek-on-android.git .; then
+            if ! git clone --depth 1 --branch bankai --filter=blob:none --sparse https://github.com/Felixdiamond/deepseek-on-android.git .; then
                 warning "⚠️ Failed to clone frontend repository. Please check your internet connection."
                 read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
                 echo
@@ -284,6 +284,9 @@ setup_frontend() {
                 cd ..
                 exit 1
             fi
+            git sparse-checkout set frontend
+            mv frontend/* .
+            rm -rf frontend
         else
             log "Frontend repository already exists. Updating repository..."
             if ! git pull; then
@@ -294,7 +297,7 @@ setup_frontend() {
         mkdir deepseek-frontend
         cd deepseek-frontend || exit 1
         log "Cloning frontend repository..."
-        if ! git clone --depth 1 https://github.com/Felixdiamond/deepseek-on-android.git .; then
+        if ! git clone --depth 1 --branch bankai --filter=blob:none --sparse https://github.com/Felixdiamond/deepseek-on-android.git .; then
             warning "⚠️ Failed to clone frontend repository. Please check your internet connection."
             read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
             echo
@@ -306,6 +309,9 @@ setup_frontend() {
             cd ..
             exit 1
         fi
+        git sparse-checkout set frontend
+        mv frontend/* .
+        rm -rf frontend
     fi
 
     # Ensure Yarn is installed
