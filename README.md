@@ -45,7 +45,7 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 
 2. **Run the Installation Script:**  
    ```bash
-   curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-on-android/main/install.sh | bash
+   curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-on-android/bankai/install.sh | bash
    ```
 
 3. **First-Time Setup:**
