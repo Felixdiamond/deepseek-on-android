@@ -260,21 +260,52 @@ setup_frontend() {
     fi
 
     log "Setting up Next.js frontend..."
-    mkdir -p deepseek-frontend
-    cd deepseek-frontend || exit 1
 
-    log "Initializing Next.js project..."
-    if ! git clone --depth 1 --branch bankai --single-branch https://github.com/Felixdiamond/deepseek-on-android.git .; then
-        warning "⚠️ Failed to clone frontend repository. Please check your internet connection."
-        read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
-        echo
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+    # Check if deepseek-frontend directory exists
+    if [ -d deepseek-frontend ]; then
+        cd deepseek-frontend || exit 1
+        # If package.json is missing, then the repo is not set up properly
+        if [ ! -f package.json ]; then
+            log "Existing deepseek-frontend directory is invalid (no package.json found). Removing it..."
             cd ..
-            setup_frontend
-            return
+            rm -rf deepseek-frontend
+            mkdir deepseek-frontend
+            cd deepseek-frontend || exit 1
+            log "Cloning frontend repository into an empty directory..."
+            if ! git clone --depth 1 https://github.com/Felixdiamond/deepseek-on-android.git .; then
+                warning "⚠️ Failed to clone frontend repository. Please check your internet connection."
+                read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
+                echo
+                if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                    cd ..
+                    setup_frontend
+                    return
+                fi
+                cd ..
+                exit 1
+            fi
+        else
+            log "Frontend repository already exists. Updating repository..."
+            if ! git pull; then
+                warning "⚠️ Failed to update frontend repository."
+            fi
         fi
-        cd ..
-        exit 1
+    else
+        mkdir deepseek-frontend
+        cd deepseek-frontend || exit 1
+        log "Cloning frontend repository..."
+        if ! git clone --depth 1 https://github.com/Felixdiamond/deepseek-on-android.git .; then
+            warning "⚠️ Failed to clone frontend repository. Please check your internet connection."
+            read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
+            echo
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                cd ..
+                setup_frontend
+                return
+            fi
+            cd ..
+            exit 1
+        fi
     fi
 
     # Ensure Yarn is installed
