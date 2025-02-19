@@ -121,7 +121,7 @@ update_packages() {
         fi
     fi
     log "Installing required packages..."
-    required_packages="git cmake python3 python3-venv python3-pip make wget build-essential golang"
+    required_packages="git cmake python3 python3-venv python3-pip make wget build-essential"
     for package in $required_packages; do
         if ! apt-get install -y "$package"; then
             warning "⚠️ Failed to install $package."
@@ -142,12 +142,9 @@ install_ollama() {
         return
     fi
     log "Installing Ollama..."
-    if [ -d "ollama" ]; then
-        warning "Ollama directory exists, removing..."
-        rm -rf ollama
-    fi
-    if ! git clone --depth 1 https://github.com/ollama/ollama.git; then
-        warning "⚠️ Failed to clone Ollama repository. Please check your internet connection."
+    
+    if ! curl -fsSL https://ollama.com/install.sh | sh; then
+        error "Failed to install Ollama"
         read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
@@ -156,39 +153,8 @@ install_ollama() {
         fi
         exit 1
     fi
-    cd ollama || exit 1
-    log "Building Ollama..."
-    if ! go generate ./...; then
-        warning "⚠️ Failed to generate Ollama files."
-        cd ..
-        read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
-        echo
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            install_ollama
-            return
-        fi
-        exit 1
-    fi
-    if ! go build; then
-        warning "⚠️ Failed to build Ollama."
-        cd ..
-        read -p "Do you want to retry? (Y/n) " -n 1 -r < /dev/tty
-        echo
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            install_ollama
-            return
-        fi
-        exit 1
-    fi
-    if ! cp ollama "$PREFIX/bin/"; then
-        warning "⚠️ Failed to install Ollama. You might need to run it from the current directory."
-        read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
-        echo
-        if [[ $REPLY =~ ^[Nn]$ ]]; then
-            exit 1
-        fi
-    fi
-    cd ..
+    
+    log "✅ Ollama installed successfully"
     touch "$CHECKPOINT_DIR/install_ollama"
 }
 
