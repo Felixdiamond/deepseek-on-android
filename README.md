@@ -34,27 +34,39 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 ### Software
 - Android 10 or higher
 - [Termux](https://github.com/termux/termux-app/releases) (Latest version)
-- Python 3.11 or newer
+- Python 3.11 or newer (Automatically installed)
 
 ## Getting Started
 
-### Automated Installation
+### Installation Steps
 
 1. **Install Termux:**  
-   Download Termux from [F-Droid](https://f-droid.org/packages/com.termux/) or [GitHub](https://github.com/termux/termux-app/releases)
+   Download and install Termux from [F-Droid](https://f-droid.org/packages/com.termux/) or [GitHub](https://github.com/termux/termux-app/releases)
 
-2. **Run the Installation Script:**  
+2. **Install proot-distro:**
    ```bash
+   pkg update -y && pkg install -y proot-distro
+   proot-distro install debian
+   ```
+
+3. **Enter Debian Environment:**
+   ```bash
+   proot-distro login debian
+   ```
+
+4. **Run the Installation Script:**
+   ```bash
+   apt-get update && apt-get install -y curl
    curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-on-android/bankai/install.sh | bash
    ```
 
-3. **First-Time Setup:**
+5. **First-Time Setup:**
    - The installer will guide you through system requirements
    - Choose your preferred DeepSeek model
    - Set up your admin account
    - Configure performance settings
 
-4. **Start Using DeepSeek:**
+6. **Start Using DeepSeek:**
    ```bash
    deepseek
    ```
@@ -114,7 +126,7 @@ deepseek-update
 ### Common Issues
 
 1. **"Not enough storage":**
-   - Clear Termux cache: `apt clean && apt autoclean`
+   - Clear package cache: `apt-get clean && apt-get autoclean`
    - Free up device storage
    - Consider using the 1.5B model instead of the 7B model
 
@@ -129,6 +141,7 @@ deepseek-update
    - Use `optimize-deepseek` to clear caches
 
 4. **"Services won't start":**
+   - Check if you're in the Debian environment: `cat /etc/os-release`
    - Check if Ollama is running: `pgrep ollama`
    - Verify Python version: `python3 --version`
    - Check the logs for specific error messages

@@ -27,16 +27,16 @@ warning() {
     echo -e "${YELLOW}[WARNING] $1${NC}"
 }
 
-# Check if running in Termux
-if [ ! -d "/data/data/com.termux" ]; then
-    error "This script must be run in Termux on Android"
+# Check if running in Debian proot
+if ! grep -q "Debian" /etc/os-release; then
+    error "This script must be run in a Debian proot environment"
     exit 1
 fi
 
 # Check system requirements (always run these)
 check_requirements() {
     log "Checking system requirements..."
-    processor=$(getprop ro.product.board)
+    processor=$(getprop ro.product.board 2>/dev/null || echo "unknown")
     if [[ ! "$processor" =~ "SM8550" && ! "$processor" =~ "SM8650" ]]; then
         warning "⚠️ Your processor may not meet the recommended requirements."
         warning "Recommended: Snapdragon 8 Gen 2/3 or equivalent"
@@ -65,7 +65,7 @@ check_requirements() {
     fi
 
     if ! command -v bc &> /dev/null; then
-        pkg install -y bc
+        apt-get install -y bc
     fi
 
     available_storage=$(df -h /data | awk 'NR==2 {print $4}' | sed 's/G//')
@@ -121,9 +121,9 @@ update_packages() {
         fi
     fi
     log "Installing required packages..."
-    required_packages="git cmake python3 make wget clang termux-services"
+    required_packages="git cmake python3 python3-venv python3-pip make wget build-essential golang"
     for package in $required_packages; do
-        if ! pkg install -y "$package"; then
+        if ! apt-get install -y "$package"; then
             warning "⚠️ Failed to install $package."
             read -p "Do you want to continue anyway? (Y/n) " -n 1 -r < /dev/tty
             echo
@@ -265,7 +265,7 @@ check_python_version() {
     fi
     
     log "Installing Python 3.11 or newer..."
-    pkg install -y python3
+    apt-get install -y python3
     
     # Verify installation
     if ! command -v python3 &> /dev/null; then
@@ -506,7 +506,6 @@ EOF
 main() {
     log "Starting DeepSeek Android installation..."
     check_requirements
-    setup_storage
     update_packages
     check_python_version
     setup_data_directory
