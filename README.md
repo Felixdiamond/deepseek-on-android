@@ -14,15 +14,11 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 - ⚡ **Automated Setup**: Simple installation process with scripts
 - 🎨 **Rich User Interface**: Feature-complete Open WebUI integration
 
-### Advanced Features
+### Other Features
 - 📝 **Full Markdown & LaTeX Support**: Rich text formatting and mathematical equations
 - 🔍 **Local RAG Integration**: Load and interact with documents directly in chat
-- 🌐 **Web Browsing**: Seamlessly integrate web content into conversations
-- 🎨 **Image Generation**: Support for various image generation models
-- 🎤 **Voice/Video Support**: Hands-free voice and video call features
 - 🔄 **Multi-Model Chat**: Use different models in parallel conversations
 - 🛠️ **Model Builder**: Create and customize models via the Web UI
-- 🐍 **Python Function Support**: Built-in code editor and function integration
 
 ## System Requirements
 
@@ -30,6 +26,8 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 - **Processor:** Snapdragon 8 Gen 2/3 (or equivalent) — required for optimal performance
 - **RAM:** Minimum **8GB** (12GB+ recommended for the 7B model)
 - **Storage:** At least **12GB** of free storage
+
+**PS:** These are the recommend hardware, but you can run it on really low end hardware too, for example, i run the 1.5b on my Infinix smart 8 budget phone of 4gb ram and Unisoc UMS9230 processor.
 
 ### Software
 - Android 10 or higher
