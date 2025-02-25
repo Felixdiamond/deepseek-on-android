@@ -23,8 +23,8 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 ## System Requirements
 
 ### Hardware
-- **Processor:** Snapdragon 8 Gen 2/3 (or equivalent) — required for optimal performance
-- **RAM:** Minimum **8GB** (12GB+ recommended for the 7B model)
+- **Processor:** Recommended Snapdragon 8 Gen 2/3 (or equivalent) for optimal performance
+- **RAM:** Recommended at least **8GB** (12GB+ recommended for the 7B model)
 - **Storage:** At least **12GB** of free storage
 
 **PS:** These are the recommend hardware, but you can run it on really low end hardware too, for example, i run the 1.5b on my Infinix smart 8 budget phone of 4gb ram and Unisoc UMS9230 processor.
