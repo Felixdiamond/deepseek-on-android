@@ -43,34 +43,40 @@ This project provides tools and scripts to run DeepSeek models locally on Androi
 1. **Install Termux:**  
    Download and install Termux from [F-Droid](https://f-droid.org/packages/com.termux/) or [GitHub](https://github.com/termux/termux-app/releases)
 
-2. **Install proot-distro:**
+2. **Setup Termux:**
+   ```bash
+   termux-setup-storage
+   termux-wake-lock
+   ```
+
+3. **Install proot-distro:**
    ```bash
    pkg update -y && pkg install -y proot-distro
    proot-distro install debian
    ```
 
-3. **Enter Debian Environment:**
+4. **Enter Debian Environment:**
    ```bash
    proot-distro login debian
    ```
 
-4. **Run the Installation Script:**
+5. **Run the Installation Script:**
    ```bash
    apt-get update && apt-get install -y curl
-   curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-on-android/bankai/install.sh | bash
+   curl -sSL https://raw.githubusercontent.com/Felixdiamond/deepseek-on-android/main/install.sh | bash
    ```
 
-5. **First-Time Setup:**
+6. **First-Time Setup:**
    - The installer will guide you through system requirements
    - Choose your preferred DeepSeek model
    - Set up your admin account
    - Configure performance settings
 
-6. **Start Using DeepSeek:**
+7. **Start Using DeepSeek:**
    ```bash
    deepseek
    ```
-   Access the web interface at http://localhost:8080
+   Access the web interface at http://0.0.0.0:8080
 
 ## Available Commands
 
